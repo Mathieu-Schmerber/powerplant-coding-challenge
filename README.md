@@ -23,10 +23,30 @@ dotnet build
 
 4. Run the API:
 
+**Development environment (HTTP):**
 ```bash
-dotnet run --project CodingChallenge/CodingChallenge.csproj
+dotnet run --project CodingChallenge/CodingChallenge.csproj --launch-profile Development
 ```
 
-The API will start and listen on http://localhost:8888.
+**Production environment (HTTPS):**
+```bash
+dotnet run --project CodingChallenge/CodingChallenge.csproj --launch-profile Production
+```
+
+**Alternative: Set environment variable directly:**
+```bash
+# Development (default)
+dotnet run --project CodingChallenge/CodingChallenge.csproj
+
+# Production (Windows)
+set ASPNETCORE_ENVIRONMENT=Production && dotnet run --project CodingChallenge/CodingChallenge.csproj
+
+# Production (Unix/Mac/Linux)
+ASPNETCORE_ENVIRONMENT=Production dotnet run --project CodingChallenge/CodingChallenge.csproj
+```
+
+The API will start and listen on:
+- **Development**: http://localhost:8888
+- **Production**: https://localhost:8888
 
 You can find some sample POST requests within `CodingChallenge/CodingChallenge.http`
