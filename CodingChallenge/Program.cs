@@ -53,6 +53,9 @@ app.MapPost("/productionplan", async (
         return Results.BadRequest(errors);
     }
 
+    var logger = context.RequestServices.GetService<ILogger<Program>>();
+    logger?.LogInformation($"Requested /productionplan: {JsonSerializer.Serialize(request)}");
+    
     var service = context.RequestServices.GetRequiredService<IProductionPlanService>();
     var productionPlan = await service.GetProductionPlan(request);
 

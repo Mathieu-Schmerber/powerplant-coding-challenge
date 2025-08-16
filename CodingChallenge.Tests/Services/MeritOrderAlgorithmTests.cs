@@ -48,4 +48,11 @@ public class MeritOrderAlgorithmTests
     {
         await _algorithm.ComputeLoads([_maxedOutWindpark], _maxedOutWindpark.MaxOutput - 1);
     }
+
+    [TestMethod]
+    public async Task ValidSolution()
+    {
+        var productionPlan = await _algorithm.ComputeLoads([_maxedOutWindpark], _maxedOutWindpark.MaxOutput);
+        Assert.AreEqual(_maxedOutWindpark.MaxOutput, productionPlan.Sum(x => x.Load));
+    }
 }

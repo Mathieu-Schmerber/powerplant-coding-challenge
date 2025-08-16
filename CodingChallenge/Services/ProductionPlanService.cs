@@ -54,6 +54,7 @@ public class ProductionPlanService : IProductionPlanService
         
         try
         {
+            _logger.LogInformation("Creating power plant instances.");
             powerPlantInstances = request.PowerPlants
                 .Select(x => _powerPlantFactory.CreateInstance(x, request.Fuels))
                 .OrderBy(x => x.CostPerMWh)
@@ -67,6 +68,7 @@ public class ProductionPlanService : IProductionPlanService
 
         try
         {
+            _logger.LogInformation("Computing production plan.");
             var productionPlan = await _algorithm.ComputeLoads(powerPlantInstances, request.Load);
             var powerPlantLoads = productionPlan as PowerPlantLoad[] ?? productionPlan.ToArray();
             return new ProductionPlanResult
