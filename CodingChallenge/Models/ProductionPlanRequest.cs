@@ -1,25 +1,41 @@
+using System.Text.Json.Serialization;
+
 namespace CodingChallenge.Models;
 
-public record ProductionPlanRequest
-{
-    public float Load { get; set; }
-    public Fuels Fuels { get; set; }
-    public PowerPlantDefinition[] PowerPlants { get; set; }
-}
+/// <summary>
+/// The production plan request DTO.
+/// </summary>
+/// <param name="Load">The targeted load.</param>
+/// <param name="Fuels">The fuels' costs.</param>
+/// <param name="PowerPlants">The available power plants.</param>
+public record ProductionPlanRequest(float Load, Fuels Fuels, PowerPlantDefinition[] PowerPlants);
 
-public record Fuels
-{
-    public float Gas { get; set; }
-    public float Kerosine { get; set; }
-    public float Co2 { get; set; }
-    public float Wind { get; set; }
-}
+/// <summary>
+/// The fuels' costs.
+/// </summary>
+/// <param name="GasCost">The gas cost in euros per MWh.</param>
+/// <param name="KerosineCost">The kerosine cost in euros per MWh.</param>
+/// <param name="Co2Cost">The co2 cost in euros per ton.</param>
+/// <param name="WindPercentage">The wind percentage.</param>
+public record Fuels(
+    [property: JsonPropertyName("gas(euro/MWh)")]
+    float GasCost,
+    
+    [property: JsonPropertyName("kerosine(euro/MWh)")]
+    float KerosineCost,
+    
+    [property: JsonPropertyName("co2(euro/ton)")]
+    float Co2Cost,
+    
+    [property: JsonPropertyName("wind(%)")]
+    float WindPercentage);
 
-public record PowerPlantDefinition
-{
-    public string Name { get; set; }
-    public string Type { get; set; }
-    public float Efficiency { get; set; }
-    public float Pmin { get; set; }
-    public float Pmax { get; set; }
-}
+/// <summary>
+/// The power plant definition.
+/// </summary>
+/// <param name="Name">The name of the power plant.</param>
+/// <param name="Type">The type of the power plant.</param>
+/// <param name="Efficiency">The efficiency of the power plant.</param>
+/// <param name="Pmin">The minimum production of the power plant.</param>
+/// <param name="Pmax">The maximum production of the power plant.</param>
+public record PowerPlantDefinition(string Name, string Type, float Efficiency, float Pmin, float Pmax);

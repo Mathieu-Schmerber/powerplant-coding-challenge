@@ -1,7 +1,11 @@
 namespace CodingChallenge.Models.PowerPlants;
 
-public sealed record GasFiredPlantInstance : PowerPlantInstance
+/// <summary>
+/// Gas fired power plant instance.
+/// <see cref="PowerPlantInstanceBase"/>
+/// </summary>
+public sealed record GasFiredPlantInstance : PowerPlantInstanceBase
 {
     public GasFiredPlantInstance(PowerPlantDefinition definition, Fuels fuels)
-        : base(definition, fuels.Gas) { }
+        : base(definition, fuels.GasCost) { }
 }

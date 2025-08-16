@@ -60,3 +60,37 @@ Content-Type: application/json
 }
 
 ###
+
+POST {{CodingChallenge_HostAddress}}/productionplan/
+Accept: application/json
+Content-Type: application/json
+
+{
+  "load": 910,
+  "fuels":
+  {
+    "gas(euro/MWh)": 13.4,
+    "kerosine(euro/MWh)": 50.8,
+    "co2(euro/ton)": 20,
+    "wind(%)": 60
+  },
+  "powerplants": []
+}
+
+###
+
+POST {{CodingChallenge_HostAddress}}/productionplan/
+Accept: application/json
+Content-Type: application/json
+
+{
+  "load": -1,
+  "fuels":
+  {
+    "gas(euro/MWh)": 13.4,
+    "kerosine(euro/MWh)": 50.8,
+    "co2(euro/ton)": 20,
+    "wind(%)": 60
+  },
+  "powerplants": []
+}

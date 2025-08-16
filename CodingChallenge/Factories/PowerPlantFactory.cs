@@ -6,11 +6,27 @@ using Microsoft.Extensions.Options;
 
 namespace CodingChallenge.Factories;
 
+/// <summary>
+/// Power plant factory implementation.
+/// <see cref="IPowerPlantFactory"/> 
+/// </summary>
 public class PowerPlantFactory : IPowerPlantFactory
 {
+    /// <summary>
+    /// The power plant configuration.
+    /// </summary>
     private readonly IOptions<PowerPlantConfig> _config;
+    
+    /// <summary>
+    /// The logger.
+    /// </summary>
     private readonly ILogger<PowerPlantFactory> _logger;
 
+    /// <summary>
+    /// Instantiates a new power plant factory.
+    /// </summary>
+    /// <param name="config">The configuration.</param>
+    /// <param name="logger">The logger.</param>
     public PowerPlantFactory(
         IOptions<PowerPlantConfig> config,
         ILogger<PowerPlantFactory> logger)
@@ -22,6 +38,7 @@ public class PowerPlantFactory : IPowerPlantFactory
         _logger = logger;
     }
     
+    /// <inheritdoc />
     public IPowerPlantInstance CreateInstance(PowerPlantDefinition definition, Fuels fuels)
     {
         Ensure.NotNull(definition, nameof(definition));
