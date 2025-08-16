@@ -1,41 +1,33 @@
+using CodingChallenge.Configurations;
+using CodingChallenge.Factories;
+using CodingChallenge.Interfaces;
+using CodingChallenge.Models;
+using CodingChallenge.Services;
+using CodingChallenge.Utils;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+// Configuration
+builder.Services.Configure<PowerPlantConfig>(builder.Configuration.GetSection(PowerPlantConfig.SECTION_NAME));
+
+// Services
 builder.Services.AddOpenApi();
+builder.Services.AddSingleton<IPowerPlantFactory, PowerPlantFactory>();
+builder.Services.AddScoped<IProductionPlanService, ProductionPlanService>();
+builder.Services.AddScoped<IMeritOrderAlgorithm, MeritOrderAlgorithm>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
-{
     app.MapOpenApi();
-}
 
 app.UseHttpsRedirection();
 
-var summaries = new[]
+app.MapPost("/productionplan", async (ProductionPlanRequest request, HttpContext context) =>
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-    {
-        var forecast = Enumerable.Range(1, 5).Select(index =>
-                new WeatherForecast
-                (
-                    DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-                    Random.Shared.Next(-20, 55),
-                    summaries[Random.Shared.Next(summaries.Length)]
-                ))
-            .ToArray();
-        return forecast;
-    })
-    .WithName("GetWeatherForecast");
+    var service = context.RequestServices.GetRequiredService<IProductionPlanService>();
+    var productionPlan = await service.GetProductionPlan(request);
+    return !productionPlan.Feasible ? Results.BadRequest() : Results.Ok(productionPlan.PowerPlantLoads);
+});
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
