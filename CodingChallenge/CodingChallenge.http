@@ -1,4 +1,4 @@
-@CodingChallenge_HostAddress = http://localhost:8888
+@CodingChallenge_HostAddress = https://localhost:8888
 
 POST {{CodingChallenge_HostAddress}}/productionplan/
 Accept: application/json

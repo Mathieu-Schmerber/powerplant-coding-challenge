@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using CodingChallenge.Interfaces;
 using CodingChallenge.Models;
 using CodingChallenge.Models.Exceptions;
@@ -27,6 +28,11 @@ public class MeritOrderAlgorithm : IMeritOrderAlgorithm
     private readonly ILogger<MeritOrderAlgorithm> _logger;
 
     /// <summary>
+    /// The stopwatch for performance measurements.
+    /// </summary>
+    private readonly Stopwatch _stopwatch;
+
+    /// <summary>
     /// Scaled power plant information.
     /// </summary>
     private record ScaledPlant(float CostPerUnit, int Min, int Max);
@@ -40,6 +46,7 @@ public class MeritOrderAlgorithm : IMeritOrderAlgorithm
         Ensure.NotNull(logger);
         
         _logger = logger;
+        _stopwatch = new Stopwatch();
     }
     
     /// <inheritdoc />
@@ -52,6 +59,8 @@ public class MeritOrderAlgorithm : IMeritOrderAlgorithm
         else if (powerPlants.Count == 0)
             throw new ArgumentException("No power plants provided.", nameof(powerPlants));
         
+        _stopwatch.Start();
+        
         var scaledTargetLoad = ScaleLoad(targetLoad);
         var scaledPlants = powerPlants
             .Select(plant => new ScaledPlant(
@@ -63,6 +72,8 @@ public class MeritOrderAlgorithm : IMeritOrderAlgorithm
         var choiceTable = Solve(scaledPlants, scaledTargetLoad);
         var result = ReconstructSolution(powerPlants, choiceTable, scaledTargetLoad);
         
+        _stopwatch.Stop();
+        _logger.LogInformation("Computed production plan in: {StopwatchElapsedMilliseconds} ms.", _stopwatch.ElapsedMilliseconds);
         return Task.FromResult(result.AsEnumerable());
     }
 
