@@ -1,5 +1,6 @@
 using CodingChallenge.Interfaces;
 using CodingChallenge.Models;
+using CodingChallenge.Models.Exceptions;
 using CodingChallenge.Utils;
 
 namespace CodingChallenge.Services;
@@ -46,26 +47,42 @@ public class MeritOrderAlgorithm : IMeritOrderAlgorithm
     {
         Ensure.NotNull(powerPlants);
         
-        if (targetLoad < 0)
-            throw new ArgumentOutOfRangeException(nameof(targetLoad), "Target load must be non-negative.");
-        if (targetLoad == 0 || powerPlants.Count == 0)
-            return Task.FromResult(Enumerable.Empty<PowerPlantLoad>());
+        if (targetLoad <= 0)
+            throw new ArgumentException("The target load must be greater than 0.", nameof(targetLoad));
+        else if (powerPlants.Count == 0)
+            throw new ArgumentException("No power plants provided.", nameof(powerPlants));
         
-        var plantCount = powerPlants.Count;
-        var steps = (int)Math.Round(targetLoad * SCALE);
+        var scaledTargetLoad = ScaleLoad(targetLoad);
         var scaledPlants = powerPlants
-            .Select(p => new ScaledPlant(
-                CostPerUnit: p.CostPerMWh,
-                Min: (int)Math.Round(p.MinOutput * SCALE),
-                Max: (int)Math.Round(p.MaxOutput * SCALE)))
+            .Select(plant => new ScaledPlant(
+                CostPerUnit: plant.CostPerMWh,
+                Min: ScaleLoad(plant.MinOutput),
+                Max: ScaleLoad(plant.MaxOutput)))
             .ToArray();
+        
+        var choiceTable = Solve(scaledPlants, scaledTargetLoad);
+        var result = ReconstructSolution(powerPlants, choiceTable, scaledTargetLoad);
+        
+        return Task.FromResult(result.AsEnumerable());
+    }
 
-        var dp = new int[plantCount + 1, steps + 1];
-        var choice = new int[plantCount + 1, steps + 1];
+    /// <summary>
+    /// Scales the load using the scale factor.
+    /// </summary>
+    private static int ScaleLoad(float load) 
+        => (int)Math.Round(load * SCALE);
+    
+    /// <summary>
+    /// Initializes the dynamic programming tables.
+    /// </summary>
+    private static (int[,] dp, int[,] choice) InitializeTables(int plantCount, int maxLoad)
+    {
+        var dp = new int[plantCount + 1, maxLoad + 1];
+        var choice = new int[plantCount + 1, maxLoad + 1];
         
         for (var i = 0; i <= plantCount; i++)
         {
-            for (var load = 0; load <= steps; load++)
+            for (var load = 0; load <= maxLoad; load++)
             {
                 dp[i, load] = INF;
                 choice[i, load] = -1;
@@ -73,49 +90,76 @@ public class MeritOrderAlgorithm : IMeritOrderAlgorithm
         }
 
         dp[0, 0] = 0;
-        for (var i = 1; i <= plantCount; i++)
+        return (dp, choice);
+    }
+
+    /// <summary>
+    /// Solves the production plan.
+    /// </summary>
+    private static int[,] Solve(ScaledPlant[] scaledPlants, int targetLoad)
+    {
+        var plantCount = scaledPlants.Length;
+        var (dp, choice) = InitializeTables(plantCount, targetLoad);
+
+        for (var plantIndex = 1; plantIndex <= plantCount; plantIndex++)
         {
-            var (cost, minL, maxL) = scaledPlants[i - 1];
-
-            for (var load = 0; load <= steps; load++)
+            var plant = scaledPlants[plantIndex - 1];
+            
+            for (var currentLoad = 0; currentLoad <= targetLoad; currentLoad++)
             {
-                if (dp[i - 1, load] < dp[i, load])
+                var costWithoutPlant = dp[plantIndex - 1, currentLoad];
+                if (costWithoutPlant < dp[plantIndex, currentLoad])
                 {
-                    dp[i, load] = dp[i - 1, load];
-                    choice[i, load] = 0;
+                    dp[plantIndex, currentLoad] = costWithoutPlant;
+                    choice[plantIndex, currentLoad] = 0;
                 }
-
-                for (var x = minL; x <= maxL; x++)
+                
+                for (var plantOutput = plant.Min; plantOutput <= plant.Max; plantOutput++)
                 {
-                    var prevLoad = load - x;
-                    if (prevLoad >= 0 && dp[i - 1, prevLoad] != INF)
+                    var remainingLoad = currentLoad - plantOutput;
+                    if (remainingLoad < 0 || dp[plantIndex - 1, remainingLoad] == INF)
+                        continue;
+
+                    var plantCost = (int)(plantOutput * plant.CostPerUnit);
+                    var totalCost = dp[plantIndex - 1, remainingLoad] + plantCost;
+                    if (totalCost < dp[plantIndex, currentLoad])
                     {
-                        var newCost = dp[i - 1, prevLoad] + (int)(x * cost);
-                        if (newCost < dp[i, load])
-                        {
-                            dp[i, load] = newCost;
-                            choice[i, load] = x;
-                        }
+                        dp[plantIndex, currentLoad] = totalCost;
+                        choice[plantIndex, currentLoad] = plantOutput;
                     }
                 }
             }
         }
 
-        if (dp[plantCount, steps] == INF)
-            throw new InvalidOperationException("No solution found for the target load.");
+        if (dp[plantCount, targetLoad] == INF)
+            throw new NoSolutionFoundException($"No solution found for the target load: {targetLoad}.");
 
-        var result = new PowerPlantLoad[plantCount];
-        var remaining = steps;
+        return choice;
+    }
 
-        for (var i = plantCount; i >= 1; i--)
+    /// <summary>
+    /// Reconstructs the optimal solution from the choice table.
+    /// </summary>
+    private static PowerPlantLoad[] ReconstructSolution(
+        IReadOnlyList<IPowerPlantInstance> originalPlants,
+        int[,] choice,
+        int targetLoad)
+    {
+        var result = new PowerPlantLoad[originalPlants.Count];
+        var remainingLoad = targetLoad;
+
+        for (var plantIndex = originalPlants.Count; plantIndex >= 1; plantIndex--)
         {
-            var load = choice[i, remaining];
-            result[i - 1] = new PowerPlantLoad(
-                powerPlants[i - 1].Name, 
-                (float)Math.Round(load / (float)SCALE, 1));
-            remaining -= load;
+            var scaledOutput = choice[plantIndex, remainingLoad];
+            var actualOutput = (float)Math.Round(scaledOutput / (float)SCALE, 1);
+            
+            result[plantIndex - 1] = new PowerPlantLoad(
+                originalPlants[plantIndex - 1].Name, 
+                actualOutput);
+                
+            remainingLoad -= scaledOutput;
         }
 
-        return Task.FromResult(result.AsEnumerable());
+        return result;
     }
 }

@@ -50,15 +50,31 @@ public class ProductionPlanService : IProductionPlanService
     {
         Ensure.NotNull(request);
         
-        var powerPlantInstances = request.PowerPlants
-            .Select(x => _powerPlantFactory.CreateInstance(x, request.Fuels))
-            .OrderBy(x => x.CostPerMWh)
-            .ToList();
+        List<IPowerPlantInstance> powerPlantInstances;
+        
+        try
+        {
+            powerPlantInstances = request.PowerPlants
+                .Select(x => _powerPlantFactory.CreateInstance(x, request.Fuels))
+                .OrderBy(x => x.CostPerMWh)
+                .ToList();
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Failed to create power plant instances.");
+            throw;
+        }
 
         try
         {
             var productionPlan = await _algorithm.ComputeLoads(powerPlantInstances, request.Load);
-            return new ProductionPlanResult {Feasible = true, PowerPlantLoads = productionPlan};
+            var powerPlantLoads = productionPlan as PowerPlantLoad[] ?? productionPlan.ToArray();
+            return new ProductionPlanResult
+            {
+                Feasible = true,
+                Load = powerPlantLoads.Sum(x => x.Load),
+                PowerPlantLoads = powerPlantLoads
+            };
         }
         catch (Exception e)
         {

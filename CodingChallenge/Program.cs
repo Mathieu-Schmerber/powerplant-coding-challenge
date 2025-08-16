@@ -1,4 +1,3 @@
-using System.ComponentModel;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using CodingChallenge.Configurations;
@@ -8,6 +7,8 @@ using CodingChallenge.Interfaces;
 using CodingChallenge.Middlewares;
 using CodingChallenge.Models;
 using CodingChallenge.Services;
+using CodingChallenge.Validation;
+using FluentValidation;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,6 +29,7 @@ builder.Services.AddOpenApi();
 builder.Services.AddSingleton<IPowerPlantFactory, PowerPlantFactory>();
 builder.Services.AddScoped<IProductionPlanService, ProductionPlanService>();
 builder.Services.AddScoped<IMeritOrderAlgorithm, MeritOrderAlgorithm>();
+builder.Services.AddValidatorsFromAssemblyContaining<ProductionPlanRequestValidator>();
 
 var app = builder.Build();
 
@@ -38,11 +40,25 @@ else
 
 app.UseHttpsRedirection();
 
-app.MapPost("/productionplan", async (ProductionPlanRequest request, HttpContext context) =>
+app.MapPost("/productionplan", async (
+    ProductionPlanRequest request, 
+    HttpContext context,
+    IValidator<ProductionPlanRequest> validator) =>
 {
+    var validationResult = await validator.ValidateAsync(request);
+    if (!validationResult.IsValid)
+    {
+        var errors = validationResult.Errors
+            .Select(e => new { e.PropertyName, e.ErrorMessage });
+        return Results.BadRequest(errors);
+    }
+
     var service = context.RequestServices.GetRequiredService<IProductionPlanService>();
     var productionPlan = await service.GetProductionPlan(request);
-    return !productionPlan.Feasible ? Results.BadRequest() : Results.Ok(productionPlan.PowerPlantLoads);
+
+    return !productionPlan.Feasible
+        ? Results.BadRequest()
+        : Results.Ok(productionPlan.PowerPlantLoads);
 });
 
 app.Run();

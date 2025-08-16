@@ -19,5 +19,5 @@ public record PowerPlantEntry
     /// <summary>
     /// Power plant type.
     /// </summary>
-    public string Type { get; init; } = string.Empty;
+    public string? Type { get; init; } = string.Empty;
 }

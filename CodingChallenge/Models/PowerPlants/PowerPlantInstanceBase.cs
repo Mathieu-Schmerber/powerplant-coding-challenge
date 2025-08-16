@@ -22,12 +22,12 @@ public abstract record PowerPlantInstanceBase : IPowerPlantInstance
     /// <summary>
     /// The fuel cost.
     /// </summary>
-    protected float FuelCost { get; init; }
+    public float FuelCost { get; init; }
     
     /// <summary>
     /// The power plant efficiency.
     /// </summary>
-    protected float Efficiency { get; init; }
+    public float Efficiency { get; init; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PowerPlantInstanceBase"/> class.

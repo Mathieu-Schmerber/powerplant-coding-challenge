@@ -18,11 +18,6 @@ public record struct ProductionPlanResult
     public float Load { get; init; }
     
     /// <summary>
-    /// The computed cost.
-    /// </summary>
-    public float TotalCost { get; init; }
-    
-    /// <summary>
     /// The power plant loads.
     /// </summary>
     public IEnumerable<PowerPlantLoad> PowerPlantLoads { get; init; }

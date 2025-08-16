@@ -1,4 +1,5 @@
 using CodingChallenge.Models;
+using CodingChallenge.Models.Exceptions;
 
 namespace CodingChallenge.Interfaces;
 
@@ -13,5 +14,6 @@ public interface IMeritOrderAlgorithm
     /// <param name="powerPlants">The available power plants.</param>
     /// <param name="targetLoad">The target load.</param>
     /// <returns>The per power plant load.</returns>
+    /// <exception cref="NoSolutionFoundException">No solution found.</exception>
     Task<IEnumerable<PowerPlantLoad>> ComputeLoads(IReadOnlyList<IPowerPlantInstance> powerPlants, float targetLoad);
 }

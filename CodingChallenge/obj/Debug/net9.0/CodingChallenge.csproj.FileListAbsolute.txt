@@ -27,3 +27,5 @@ C:\Users\mathi\Perso\powerplant-coding-challenge\CodingChallenge\obj\Debug\net9.
 C:\Users\mathi\Perso\powerplant-coding-challenge\CodingChallenge\obj\Debug\net9.0\CodingChallenge.pdb
 C:\Users\mathi\Perso\powerplant-coding-challenge\CodingChallenge\obj\Debug\net9.0\CodingChallenge.genruntimeconfig.cache
 C:\Users\mathi\Perso\powerplant-coding-challenge\CodingChallenge\obj\Debug\net9.0\ref\CodingChallenge.dll
+C:\Users\mathi\Perso\powerplant-coding-challenge\CodingChallenge\bin\Debug\net9.0\FluentValidation.dll
+C:\Users\mathi\Perso\powerplant-coding-challenge\CodingChallenge\bin\Debug\net9.0\FluentValidation.DependencyInjectionExtensions.dll
